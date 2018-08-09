@@ -2,14 +2,15 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import glob
+import datetime
 
 print('CIFAR-10 classification with tf version={}'.format(tf.__version__))
 
 CIFAR_DIR = './data/cifar-10-batches-py/'
 CLASSES_NUM = 10
-LEARNING_RATE = 0.01
-BATCH_SIZE = 100
-ITERATION_NUM = 5000 
+LEARNING_RATE = 0.001
+BATCH_SIZE = 50
+ITERATION_NUM = 30000 
 C1, C2, C3 = 30, 50, 80
 
 
@@ -22,13 +23,11 @@ image_counter = 0
 
 def bias(shape):
 	return tf.Variable(tf.random_normal(shape=shape,
-				stddev=0.01, dtype=tf.float32), dtype=tf.float32, name='bias')
-
-
+				stddev=0.1, dtype=tf.float32), dtype=tf.float32, name='bias')
 
 def weights(shape):
 	return tf.Variable(tf.truncated_normal(shape=shape,
-				stddev=0.01, dtype=tf.float32), dtype=tf.float32, name='weights')
+				stddev=0.1, dtype=tf.float32), dtype=tf.float32, name='weights')
 
 
 def conv_layer(x, kernel_shape):
@@ -65,7 +64,6 @@ def get_next_batch(batch_size, images, labels):
 	return batch_images, batch_labels
 	
 	
-
 def get_data(batch_name):
 	files = glob.glob(CIFAR_DIR+batch_name)
 	data = []
@@ -123,14 +121,20 @@ with tf.device('/gpu:0'):
 	correct = tf.equal(tf.argmax(y_pred,1), tf.argmax(y,1))
 	accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 	
-	with tf.Session() as sess:
+	with tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True)) as sess:
+		tf.summary.scalar('Cross entropy', cross_entropy)
+		tf.summary.scalar('Accuracy', accuracy)
+		merged = tf.summary.merge_all()
+		logdir = 'tensorboard/' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '/'
+		writer = tf.summary.FileWriter(logdir, sess.graph)
 		sess.run(tf.global_variables_initializer())
+		
 		for epoch in range(ITERATION_NUM):
 			batch_x, batch_y = get_next_batch(BATCH_SIZE, X_train, y_train)
-			loss = sess.run(optimize, feed_dict={x:batch_x, y:batch_y, hold_probability:0.5})
-			
-			if epoch%100 == 0:
-				print('On epoch={}: loss={}'.format(epoch,loss))
+			summary, _ = sess.run([merged, optimize], feed_dict={x:batch_x, y:batch_y, hold_probability:0.5})
+			writer.add_summary(summary, epoch)
+			if epoch%10 == 0:
+				print('On epoch={}: loss={}'.format(epoch, cross_entropy))
 				X_test = X_test.reshape(10,1000,32,32,3)	
 				y_test = y_test.reshape(10,1000,10)
 				acc = np.mean([sess.run(accuracy, feed_dict={x:X_test[i], y:y_test[i], hold_probability:1.0}) for i in range(10)])	
