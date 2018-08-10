@@ -7,11 +7,12 @@ import datetime
 print('CIFAR-10 classification with tf version={}'.format(tf.__version__))
 
 CIFAR_DIR = './data/cifar-10-batches-py/'
+MODEL_DIR = './model/'
 CLASSES_NUM = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 BATCH_SIZE = 50
-ITERATION_NUM = 30000 
-C1, C2, C3 = 30, 50, 80
+ITERATION_NUM = 500000 
+C1, C2, C3 = 32, 64, 96
 
 
 X_train = []
@@ -110,16 +111,17 @@ with tf.device('/gpu:0'):
 	drop3 = tf.nn.dropout(conv3_flat, keep_prob=hold_probability)
 	
 
-	fully_connected1 = tf.nn.relu(fully_connected(drop3, 500))
+	fully_connected1 = tf.nn.relu(fully_connected(drop3, 1024))
 	_fully_connected1 = tf.nn.dropout(fully_connected1, keep_prob=hold_probability)
 	y_pred = fully_connected(_fully_connected1, 10)
 	
 	#define loss
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=y_pred))
 	optimize = tf.train.AdamOptimizer(LEARNING_RATE).minimize(cross_entropy)
-	print('Shapes ', tf.shape(y_pred)[0], tf.shape(y)[0])
 	correct = tf.equal(tf.argmax(y_pred,1), tf.argmax(y,1))
 	accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
+	
+	saver = tf.train.Saver()
 	
 	with tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True)) as sess:
 		tf.summary.scalar('Cross entropy', cross_entropy)
@@ -142,4 +144,5 @@ with tf.device('/gpu:0'):
 	
 
 			
-
+		print('Saving a model')
+		saver.save(MODEL_DIR+'cifar_32_64_96.ckpt')
