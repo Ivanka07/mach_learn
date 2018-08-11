@@ -11,7 +11,7 @@ MODEL_DIR = './model/'
 CLASSES_NUM = 10
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 50
-ITERATION_NUM = 500000 
+ITERATION_NUM = 1000000 
 C1, C2, C3 = 32, 64, 96
 
 
@@ -145,4 +145,4 @@ with tf.device('/gpu:0'):
 
 			
 		print('Saving a model')
-		saver.save(MODEL_DIR+'cifar_32_64_96.ckpt')
+		saver.save(sess, MODEL_DIR+'cifar_32_64_96.ckpt')
