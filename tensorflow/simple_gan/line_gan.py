@@ -139,3 +139,17 @@ def train_gan(batch_size, epoch_num, z_dim, d_learning_rate, g_learning_rate, ba
                     writer.add_summary(summary,i)
            
         saver.save(sess, "./models/line_gan_model.ckpt")
+
+def load_from_model(path):
+    print('Loading model from %s' % path)
+    g_input_pl = tf.placeholder(tf.float32, (None, 100), name='inputs_gen') 
+    with tf.Session() as sess:
+        saver = tf.train.import_meta_graph(path)
+        saver.restore(sess, path)
+        for i in range(0, 5):
+            z_batch = np.random.uniform(-1, 1, size=[1,100])
+            sample = sess.run(
+                    generator(g_input_pl),feed_dict={g_input_pl: z_batch}
+                    )
+            print(sample)
+  
