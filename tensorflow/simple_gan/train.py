@@ -14,6 +14,6 @@ NUM_HIDDEN = 3
 if __name__== '__main__':
     training_data = generate_training_data(628)
     batches = get_batches(training_data, BATCH_SIZE)
-    with tf.device('\gpu:0'):
+    with tf.device('/gpu:0'):
         train_gan(BATCH_SIZE, EPOCHS, Z_DIMENSION, D_LEARNING_RATE, G_LEARNING_RATE, batches)
 
